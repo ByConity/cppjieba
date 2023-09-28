@@ -1,6 +1,7 @@
 #ifndef CPPJIEAB_JIEBA_H
 #define CPPJIEAB_JIEBA_H
 
+#include <vector>
 #include "QuerySegment.hpp"
 #include "KeywordExtractor.hpp"
 
@@ -112,6 +113,10 @@ class Jieba {
 
   void LoadUserDict(const string& path)  {
     dict_trie_.LoadUserDict(path);
+  }
+
+  void cutForSearchWithStringRange(const string& sentence, std::vector<WordRangeWithOffset>& words_with_offset, bool hmm = true){
+    return query_seg_.cutWithStringRange(sentence, words_with_offset, hmm);
   }
 
  private:

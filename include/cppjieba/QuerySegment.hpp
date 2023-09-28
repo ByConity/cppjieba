@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <set>
 #include <cassert>
+#include <vector>
 #include "limonp/Logging.hpp"
 #include "DictTrie.hpp"
 #include "SegmentBase.hpp"
@@ -12,6 +13,13 @@
 #include "Unicode.hpp"
 
 namespace cppjieba {
+
+struct WordRangeWithOffset
+{
+  size_t offset;
+  size_t len;
+};
+
 class QuerySegment: public SegmentBase {
  public:
   QuerySegment(const string& dict, const string& model, const string& userDict = "")
@@ -45,6 +53,7 @@ class QuerySegment: public SegmentBase {
     words.reserve(wrs.size());
     GetWordsFromWordRanges(sentence, wrs, words);
   }
+
   void Cut(RuneStrArray::const_iterator begin, RuneStrArray::const_iterator end, vector<WordRange>& res, bool hmm) const {
     //use mix Cut first
     vector<WordRange> mixRes;
@@ -71,6 +80,33 @@ class QuerySegment: public SegmentBase {
       res.push_back(*mixResItr);
     }
   }
+
+  inline void getOffsetsWithRanges(const vector<WordRange> & word_ranges, vector<WordRangeWithOffset> & words_with_offset)
+  { 
+    words_with_offset.resize(word_ranges.size());
+
+    for(size_t i = 0 ; i < word_ranges.size() ; i++)
+    {
+      assert(word_ranges[i].left->offset <= word_ranges[i].right->offset);
+
+      words_with_offset[i].offset = word_ranges[i].left->offset;
+      words_with_offset[i].len = word_ranges[i].right->offset - word_ranges[i].left->offset + word_ranges[i].right->len;
+    }
+  }
+  
+  void cutWithStringRange(const string& sentence, vector<WordRangeWithOffset> & words_with_offset, bool hmm = true)
+  {
+    PreFilter pre_filter(symbols_, sentence);
+    PreFilter::Range range;
+    vector<WordRange> word_ranges;
+    word_ranges.reserve(sentence.size()/2);
+    while (pre_filter.HasNext()) {
+      range = pre_filter.Next();
+      Cut(range.begin, range.end, word_ranges, hmm);
+    }
+    getOffsetsWithRanges(word_ranges, words_with_offset);
+  }
+
  private:
   bool IsAllAscii(const Unicode& s) const {
    for(size_t i = 0; i < s.size(); i++) {
