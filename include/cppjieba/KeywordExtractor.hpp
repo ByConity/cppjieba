@@ -88,7 +88,7 @@ class KeywordExtractor {
       keywords.push_back(itr->second);
     }
     topN = min(topN, keywords.size());
-    partial_sort(keywords.begin(), keywords.begin() + topN, keywords.end(), Compare);
+    std::partial_sort(keywords.begin(), keywords.begin() + topN, keywords.end(), Compare);
     keywords.resize(topN);
   }
  private:
